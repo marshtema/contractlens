@@ -13,8 +13,27 @@ export default async function DocumentPage({
 }: {
   params: { id: string };
 }) {
-  const doc = await getDocument(params.id).catch(() => null);
-  if (!doc) notFound();
+  let doc;
+  try {
+    doc = await getDocument(params.id);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
+    if (msg.includes("404")) notFound();
+    // Forbidden или 500 — покажем понятное сообщение
+    return (
+      <div className="container-narrow py-20 text-center">
+        <h1 className="font-display text-2xl font-bold text-ink">
+          {msg.includes("403")
+            ? "Документ принадлежит другому пользователю"
+            : "Не удалось загрузить документ"}
+        </h1>
+        <p className="mt-3 text-sm text-ink-muted">{msg}</p>
+        <Link href="/documents" className="btn-primary mt-6 inline-flex">
+          Назад к истории
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">

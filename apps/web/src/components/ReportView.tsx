@@ -32,7 +32,8 @@ import type {
   RiskItem,
   RiskLevel,
 } from "@contractlens/shared";
-import { ScoreGauge, scoreTone } from "./ScoreGauge";
+import { ScoreGauge } from "./ScoreGauge";
+import { scoreTone } from "@/lib/risk-tone";
 import { DocumentViewer } from "./DocumentViewer";
 import { VerdictBanner } from "./VerdictBanner";
 import { cn } from "@/lib/cn";

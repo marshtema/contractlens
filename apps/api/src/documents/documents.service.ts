@@ -10,7 +10,7 @@ import { StorageService } from "../storage/storage.service.js";
 import { AiAnalyzerService } from "../ai/ai-analyzer.service.js";
 import { TextExtractionService } from "./text-extraction.service.js";
 import { AuthService } from "../auth/auth.service.js";
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, HttpException, HttpStatus } from "@nestjs/common";
 
 @Injectable()
 export class DocumentsService {
@@ -33,8 +33,17 @@ export class DocumentsService {
     if (userId) {
       const usage = await this.authService.checkAndIncrementUsage(userId);
       if (!usage.allowed) {
-        throw new ForbiddenException(
-          usage.reason ?? "Превышен лимит документов по вашему тарифу.",
+        // 402 Payment Required: фронт показывает диалог апгрейда
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.PAYMENT_REQUIRED,
+            code: "plan_limit",
+            message: usage.reason ?? "Превышен лимит документов по вашему тарифу.",
+            current_plan: usage.user.subscriptionTier,
+            documents_used: usage.user.documentsUsedThisMonth,
+            documents_limit: usage.user.documentsLimit,
+          },
+          HttpStatus.PAYMENT_REQUIRED,
         );
       }
     }

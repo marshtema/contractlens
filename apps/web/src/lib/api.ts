@@ -1,21 +1,51 @@
 import type { DocumentDetail, DocumentSummary } from "@contractlens/shared";
 
-const API_BASE =
-  typeof window === "undefined"
-    ? process.env.API_ORIGIN ?? "http://localhost:3001"
-    : "";
+const SERVER_API_BASE = process.env.API_ORIGIN ?? "http://localhost:3001";
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public body: unknown,
+  ) {
+    super(message);
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}/api${path}`, {
-    ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-    },
-  });
+  const isServer = typeof window === "undefined";
+  let url: string;
+  const headers: Record<string, string> = {
+    ...((init?.headers as Record<string, string>) ?? {}),
+  };
+
+  if (isServer) {
+    url = `${SERVER_API_BASE}/api${path}`;
+    try {
+      const { headers: nextHeaders } = await import("next/headers");
+      const cookie = nextHeaders().get("cookie");
+      if (cookie) headers.cookie = cookie;
+    } catch {
+      /* not in request scope */
+    }
+  } else {
+    url = `/api${path}`;
+  }
+
+  const res = await fetch(url, { ...init, headers });
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(
-      `API ${res.status} ${res.statusText}${body ? `: ${body}` : ""}`,
+    let body: unknown = await res.text().catch(() => "");
+    try {
+      body = JSON.parse(body as string);
+    } catch {
+      /* keep text */
+    }
+    throw new ApiError(
+      typeof body === "object" && body && "message" in body
+        ? String((body as { message: unknown }).message)
+        : `API ${res.status}`,
+      res.status,
+      body,
     );
   }
   return res.json() as Promise<T>;
@@ -29,9 +59,18 @@ export async function uploadDocument(file: File): Promise<DocumentSummary> {
     body: fd,
   });
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(
-      `Upload failed: ${res.status} ${res.statusText}${body ? ` — ${body}` : ""}`,
+    let body: unknown = await res.text().catch(() => "");
+    try {
+      body = JSON.parse(body as string);
+    } catch {
+      /* keep text */
+    }
+    throw new ApiError(
+      typeof body === "object" && body && "message" in body
+        ? String((body as { message: unknown }).message)
+        : `Upload failed: ${res.status}`,
+      res.status,
+      body,
     );
   }
   return res.json();

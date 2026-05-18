@@ -7,7 +7,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { listDocuments } from "@/lib/api";
-import { scoreTone } from "@/components/ScoreGauge";
+import { scoreTone } from "@/lib/risk-tone";
 import { cn } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";

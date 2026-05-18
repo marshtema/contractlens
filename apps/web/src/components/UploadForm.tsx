@@ -3,8 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState, type DragEvent } from "react";
 import { ArrowRight, FileUp, Loader2, ShieldAlert } from "lucide-react";
-import { uploadDocument } from "@/lib/api";
+import { ApiError, uploadDocument } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import {
+  LimitReachedDialog,
+  type LimitInfo,
+} from "@/components/LimitReachedDialog";
 
 const ACCEPT = ".pdf,.docx,.txt,.png,.jpg,.jpeg";
 
@@ -13,6 +17,7 @@ export function UploadForm({ compact = false }: { compact?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [limit, setLimit] = useState<LimitInfo | null>(null);
 
   async function handleFile(file: File) {
     setBusy(true);
@@ -21,7 +26,22 @@ export function UploadForm({ compact = false }: { compact?: boolean }) {
       const doc = await uploadDocument(file);
       router.push(`/documents/${doc.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось загрузить файл");
+      if (err instanceof ApiError && err.status === 402) {
+        const body = err.body as {
+          current_plan?: string;
+          documents_used?: number;
+          documents_limit?: number;
+        };
+        setLimit({
+          currentPlan: body.current_plan ?? "free",
+          documentsUsed: body.documents_used ?? 0,
+          documentsLimit: body.documents_limit ?? 3,
+        });
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Не удалось загрузить файл",
+        );
+      }
       setBusy(false);
     }
   }
@@ -129,6 +149,8 @@ export function UploadForm({ compact = false }: { compact?: boolean }) {
           Выбрать файл <ArrowRight className="h-4 w-4" />
         </button>
       )}
+
+      <LimitReachedDialog info={limit} onClose={() => setLimit(null)} />
     </div>
   );
 }
