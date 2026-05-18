@@ -25,6 +25,7 @@ export class MockAiAnalyzerService extends AiAnalyzerService {
     const result: AnalysisResult = {
       document_type: documentType,
       parties: extractParties(text),
+      protected_role: "neutral",
       key_terms: {
         duration: extractKeyTerm(text, KEY_TERM_PATTERNS.duration) ?? "не указан",
         payment_terms:
@@ -35,6 +36,18 @@ export class MockAiAnalyzerService extends AiAnalyzerService {
       risk_score: riskScore,
       risks,
       summary: buildSummary(documentType, risks, riskScore),
+      verdict:
+        riskScore >= 60
+          ? "do_not_sign"
+          : riskScore >= 30
+            ? "negotiate"
+            : "sign_as_is",
+      verdict_explanation:
+        riskScore >= 60
+          ? "Слишком много критических рисков — подписывать опасно."
+          : riskScore >= 30
+            ? "Есть несколько спорных пунктов — стоит обсудить с контрагентом."
+            : "Договор в целом сбалансирован.",
     };
 
     return AnalysisResultSchema.parse(result);
@@ -307,6 +320,9 @@ function detectMockRisks(text: string): RiskItem[] {
       explanation: rule.explanation,
       recommendation: rule.recommendation,
       standard_practice: rule.standardPractice,
+      suggested_fix: null,
+      negotiation_email: null,
+      monetary_impact: null,
     });
   }
 
@@ -319,8 +335,11 @@ function detectMockRisks(text: string): RiskItem[] {
       explanation:
         "Mock-анализатор не нашёл явных красных флагов по заложенным шаблонам. Это эвристика, не настоящий AI — реальный анализ доступен после подключения LLM-ключа.",
       recommendation:
-        "Подключите ANTHROPIC_API_KEY и установите AI_PROVIDER=anthropic для полноценного анализа.",
+        "Подключите GROQ_API_KEY и установите AI_PROVIDER=groq для полноценного анализа.",
       standard_practice: "—",
+      suggested_fix: null,
+      negotiation_email: null,
+      monetary_impact: null,
     });
   }
 

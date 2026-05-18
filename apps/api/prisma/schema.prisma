@@ -49,6 +49,8 @@ model Document {
   status          String     @default("uploaded")
   // JSON-сериализованный AnalysisResult
   analysisResult  String?
+  // Извлечённый исходный текст документа (для viewer'а и AI-чата)
+  extractedText   String?
   errorMessage    String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt

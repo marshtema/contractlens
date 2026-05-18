@@ -32,6 +32,7 @@ export type DocumentSummary = z.infer<typeof DocumentSummarySchema>;
 
 export const DocumentDetailSchema = DocumentSummarySchema.extend({
   analysisResult: AnalysisResultSchema.nullable(),
+  extractedText: z.string().nullable(),
   errorMessage: z.string().nullable(),
 });
 export type DocumentDetail = z.infer<typeof DocumentDetailSchema>;

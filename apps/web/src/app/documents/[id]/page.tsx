@@ -16,7 +16,7 @@ export default async function DocumentPage({
   if (!doc) notFound();
 
   return (
-    <div className="container-narrow py-10">
+    <div className="mx-auto max-w-7xl px-6 py-10">
       <Link
         href="/documents"
         className="inline-flex items-center gap-1.5 text-sm text-ink-dim transition hover:text-ink"
@@ -60,6 +60,7 @@ export default async function DocumentPage({
         <ReportView
           analysis={doc.analysisResult}
           riskScore={doc.riskScore ?? 0}
+          extractedText={doc.extractedText}
         />
       )}
     </div>

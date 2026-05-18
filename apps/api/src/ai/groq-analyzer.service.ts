@@ -115,6 +115,10 @@ const DOC_TYPE_ALIASES: Record<string, string> = {
   "договор аренды": "lease_agreement",
   аренда: "lease_agreement",
   lease: "lease_agreement",
+  rental: "lease_agreement",
+  rental_agreement: "lease_agreement",
+  tenancy: "lease_agreement",
+  tenancy_agreement: "lease_agreement",
   "трудовой договор": "employment_contract",
   трудовой: "employment_contract",
   employment: "employment_contract",
@@ -177,23 +181,31 @@ function coerceEnum(
   value: unknown,
   enumValues: readonly string[],
   aliases: Record<string, string>,
-): string | unknown {
-  if (typeof value !== "string") return value;
+  fallback: string,
+): string {
+  if (typeof value !== "string") return fallback;
   const trimmed = value.trim();
   if (enumValues.includes(trimmed)) return trimmed;
-  const lower = trimmed.toLowerCase();
+  const lower = trimmed.toLowerCase().replace(/[_\s-]+/g, "_");
+  if (enumValues.includes(lower)) return lower;
   if (aliases[lower]) return aliases[lower];
+  // Substring match — обе стороны
   for (const [key, mapped] of Object.entries(aliases)) {
-    if (lower.includes(key)) return mapped;
+    if (lower.includes(key) || key.includes(lower)) return mapped;
   }
-  return value;
+  // Substring против самих enum-значений
+  for (const v of enumValues) {
+    const stem = v.split("_")[0]!;
+    if (lower.includes(stem)) return v;
+  }
+  return fallback;
 }
 
 function coerceEnums(input: unknown): unknown {
   if (!input || typeof input !== "object") return input;
   const obj = input as Record<string, unknown>;
 
-  if (typeof obj.document_type === "string") {
+  if ("document_type" in obj) {
     obj.document_type = coerceEnum(
       obj.document_type,
       [
@@ -208,6 +220,41 @@ function coerceEnums(input: unknown): unknown {
         "other",
       ],
       DOC_TYPE_ALIASES,
+      "other",
+    );
+  }
+
+  if ("protected_role" in obj) {
+    obj.protected_role = coerceEnum(
+      obj.protected_role,
+      [
+        "service_provider",
+        "service_customer",
+        "tenant",
+        "landlord",
+        "employee",
+        "employer",
+        "borrower",
+        "lender",
+        "founder",
+        "investor",
+        "buyer",
+        "seller",
+        "disclosing_party",
+        "receiving_party",
+        "neutral",
+      ],
+      {},
+      "neutral",
+    );
+  }
+
+  if ("verdict" in obj) {
+    obj.verdict = coerceEnum(
+      obj.verdict,
+      ["sign_as_is", "negotiate", "do_not_sign"],
+      {},
+      "negotiate",
     );
   }
 
@@ -215,29 +262,32 @@ function coerceEnums(input: unknown): unknown {
     obj.risks = obj.risks.map((r) => {
       if (!r || typeof r !== "object") return r;
       const risk = r as Record<string, unknown>;
-      if (typeof risk.risk_level === "string") {
-        risk.risk_level = coerceEnum(
-          risk.risk_level,
-          ["critical", "warning", "info"],
-          RISK_LEVEL_ALIASES,
-        );
-      }
-      if (typeof risk.risk_category === "string") {
-        risk.risk_category = coerceEnum(
-          risk.risk_category,
-          [
-            "payment",
-            "termination",
-            "liability",
-            "intellectual_property",
-            "confidentiality",
-            "competition",
-            "force_majeure",
-            "dispute_resolution",
-            "other",
-          ],
-          RISK_CAT_ALIASES,
-        );
+      risk.risk_level = coerceEnum(
+        risk.risk_level,
+        ["critical", "warning", "info"],
+        RISK_LEVEL_ALIASES,
+        "info",
+      );
+      risk.risk_category = coerceEnum(
+        risk.risk_category,
+        [
+          "payment",
+          "termination",
+          "liability",
+          "intellectual_property",
+          "confidentiality",
+          "competition",
+          "force_majeure",
+          "dispute_resolution",
+          "other",
+        ],
+        RISK_CAT_ALIASES,
+        "other",
+      );
+      // Nullable string fields
+      for (const k of ["suggested_fix", "negotiation_email", "monetary_impact"]) {
+        const v = risk[k];
+        if (v == null || v === "" || v === "null") risk[k] = null;
       }
       return risk;
     });
@@ -252,46 +302,55 @@ function coerceEnums(input: unknown): unknown {
 
 const SYSTEM_PROMPT = `Ты — старший юрист с 20-летним опытом в B2B-договорах. Защищаешь интересы СЛАБОЙ стороны (исполнитель, арендатор, работник) от сильной (заказчик, арендодатель, работодатель).
 
-ПРОЙДИ МЫСЛЕННО ПО ЧЕК-ЛИСТУ (не выводи его — только используй):
+ПРОЙДИ МЫСЛЕННО ПО ЧЕК-ЛИСТУ (не выводи — только используй):
 A. Оплата: срок (30 — норма, 60 — info, 90+ — critical), аванс, валютные риски, retention.
-B. Ответственность: есть ли лимит? "Без ограничений" / "в полном объёме" / нет лимита — CRITICAL. Симметрия. Косвенные убытки.
-C. ИС: кому права? Используются ли OSS? Можно ли в портфолио?
-D. Срок и расторжение: автопродление (=WARNING), одностороннее расторжение заказчиком, оплата за выполненную работу.
+B. Ответственность: лимит? "Без ограничений" / "в полном объёме" без лимита — CRITICAL. Симметрия. Косвенные убытки.
+C. ИС: кому права? OSS? Портфолио?
+D. Срок и расторжение: автопродление (WARNING), одностороннее расторжение заказчиком, оплата за уже сделанное.
 E. Изменение условий: одностороннее изменение ТЗ без пересмотра цены = WARNING/CRITICAL.
 F. Неконкуренция: срок >12 мес или без компенсации = WARNING.
-G. Конфиденциальность: бессрочный NDA, слишком широкое определение, штрафы.
-H. Штрафы: симметрия, размер (>0.1%/день — рискованно), потолок.
-I. Форс-мажор: есть ли пункт? Срок уведомления?
-J. Подсудность: в "удобном" заказчику городе/стране — WARNING.
+G. Конфиденциальность: бессрочный NDA, широкое определение, штрафы.
+H. Штрафы: симметрия, размер (>0.1%/день рискованно), потолок.
+I. Форс-мажор: есть ли пункт?
+J. Подсудность: "удобный" заказчику город = WARNING.
 
 ПРАВИЛА:
-1. Не пропускай очевидное. Если в тексте "90 дней оплата" — ВСЕГДА в риски как минимум WARNING.
-2. КОНЦЕНТРИРУЙ риски: 3-8 пунктов, только важное по делу. НЕ создавай отдельный риск на каждое отсутствующее условие.
-3. Цитаты в clause_text — точные фразы из документа (до 250 символов).
-4. Описательные тексты — на русском. Enum-поля (document_type, risk_level, risk_category) — ТОЛЬКО английские snake_case коды из списка ниже.
-5. summary — 2-3 предложения о главном.
+1. Не пропускай очевидное. "90 дней оплата" — ВСЕГДА в риски как минимум WARNING.
+2. КОНЦЕНТРИРУЙ: 3-8 рисков. НЕ создавай отдельный риск на каждое отсутствующее условие.
+3. Определи кого защищаем: protected_role — кто слабее.
+4. Цитаты в clause_text — точные ФРАГМЕНТЫ из текста документа (важно для подсветки на UI), до 250 символов.
+5. Для каждого риска:
+   - suggested_fix: КОНКРЕТНЫЙ переписанный текст пункта на твой вариант. Полный пункт, который можно вставить в договор. Если придумать сложно — null.
+   - negotiation_email: короткое деловое письмо контрагенту (2-4 предложения) с просьбой изменить пункт. Стиль вежливый, но твёрдый. Без приветствия и подписи — только тело. Если не применимо — null.
+   - monetary_impact: грубая оценка денежного риска для нашей стороны одной фразой ("до 500 000 ₽", "неограниченно", "от 50 000 ₽ за каждый случай"). null если не подсчитать.
+6. verdict: "sign_as_is" (нет критических), "negotiate" (есть warning/critical, но можно правкой), "do_not_sign" (нерешаемое: например, явный обман или совершенно кабальные условия).
+7. verdict_explanation: 1 предложение почему именно такой вердикт.
+8. summary — 2-3 предложения о главном.
+9. Описательные поля — на РУССКОМ. Enum-поля (document_type, risk_level, risk_category, protected_role, verdict) — английские snake_case.
 
-ФОРМАТ ОТВЕТА — СТРОГО валидный JSON, БЕЗ markdown-обёрток:
+ФОРМАТ — СТРОГО валидный JSON БЕЗ markdown-обёрток:
 
 {
-  "document_type": "lease_agreement"|"employment_contract"|"nda"|"service_agreement"|"purchase_agreement"|"loan_agreement"|"partnership_agreement"|"investment_term_sheet"|"other",
-  "parties": ["сторона 1 (полное наименование)", "сторона 2"],
-  "key_terms": {
-    "duration": "срок одной фразой",
-    "payment_terms": "оплата одной фразой",
-    "termination": "расторжение одной фразой"
-  },
-  "risk_score": 0-100 (по совокупности: critical +30, warning +15, info +5),
+  "document_type": "service_agreement",
+  "parties": ["ООО ..., полное наименование", "ИП ..."],
+  "protected_role": "service_provider"|"service_customer"|"tenant"|"landlord"|"employee"|"employer"|"borrower"|"lender"|"founder"|"investor"|"buyer"|"seller"|"disclosing_party"|"receiving_party"|"neutral",
+  "key_terms": { "duration": "...", "payment_terms": "...", "termination": "..." },
+  "risk_score": 0-100,
   "risks": [
     {
-      "clause_number": "4.2 или короткая метка",
-      "clause_text": "точная цитата до 250 символов",
-      "risk_level": "critical"|"warning"|"info",
-      "risk_category": "payment"|"termination"|"liability"|"intellectual_property"|"confidentiality"|"competition"|"force_majeure"|"dispute_resolution"|"other",
-      "explanation": "что и почему плохо, 1-2 простых предложения",
-      "recommendation": "конкретно что просить изменить",
-      "standard_practice": "как принято в нормальных договорах"
+      "clause_number": "4.2",
+      "clause_text": "точная цитата",
+      "risk_level": "critical|warning|info",
+      "risk_category": "payment|termination|liability|intellectual_property|confidentiality|competition|force_majeure|dispute_resolution|other",
+      "explanation": "...",
+      "recommendation": "...",
+      "standard_practice": "...",
+      "suggested_fix": "Готовый текст пункта или null",
+      "negotiation_email": "Текст письма или null",
+      "monetary_impact": "до 500 000 ₽ или null"
     }
   ],
-  "summary": "главное за 2-3 предложения"
+  "summary": "...",
+  "verdict": "sign_as_is|negotiate|do_not_sign",
+  "verdict_explanation": "..."
 }`;

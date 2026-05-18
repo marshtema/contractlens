@@ -39,8 +39,6 @@ export class DocumentsService {
       },
     });
 
-    // Анализ в фоне — не блокируем HTTP-ответ.
-    // На проде это будет BullMQ-задача; сейчас — fire-and-forget с логированием.
     void this.runAnalysis(doc.id, fileBuffer, mimeType).catch((err) => {
       this.logger.error(
         `analysis crashed for ${doc.id}: ${err instanceof Error ? err.message : err}`,
@@ -54,6 +52,15 @@ export class DocumentsService {
     const doc = await this.prisma.document.findUnique({ where: { id } });
     if (!doc) throw new NotFoundException(`Document ${id} not found`);
     return this.toDetail(doc);
+  }
+
+  async getExtractedText(id: string): Promise<string> {
+    const doc = await this.prisma.document.findUnique({
+      where: { id },
+      select: { extractedText: true },
+    });
+    if (!doc) throw new NotFoundException(`Document ${id} not found`);
+    return doc.extractedText ?? "";
   }
 
   async list(): Promise<DocumentSummary[]> {
@@ -82,6 +89,13 @@ export class DocumentsService {
         });
         return;
       }
+
+      // Сохраняем извлечённый текст сразу — пригодится для viewer/чата
+      // даже если AI упадёт.
+      await this.prisma.document.update({
+        where: { id: documentId },
+        data: { extractedText: trimmed.slice(0, 100_000) },
+      });
 
       const analysis = await this.analyzer.analyze({
         text: trimmed.slice(0, 50_000),
@@ -158,6 +172,7 @@ export class DocumentsService {
     riskScore: number | null;
     createdAt: Date;
     analysisResult: string | null;
+    extractedText: string | null;
     errorMessage: string | null;
   }): DocumentDetail {
     const summary = this.toSummary(doc);
@@ -176,6 +191,7 @@ export class DocumentsService {
     return {
       ...summary,
       analysisResult: analysis,
+      extractedText: doc.extractedText,
       errorMessage: doc.errorMessage,
     };
   }
