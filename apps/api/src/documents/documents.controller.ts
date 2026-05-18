@@ -15,6 +15,12 @@ import {
 } from "@contractlens/shared";
 import { DocumentsService } from "./documents.service.js";
 import { PdfReportService } from "./pdf-report.service.js";
+import {
+  CurrentUser,
+  RequireUserGuard,
+} from "../auth/current-user.decorator.js";
+import { UseGuards } from "@nestjs/common";
+import type { SessionUser } from "../auth/auth.service.js";
 
 @Controller("documents")
 export class DocumentsController {
@@ -45,17 +51,29 @@ export class DocumentsController {
   }
 
   @Get()
-  list() {
-    return this.documents.list();
+  list(@CurrentUser() user: SessionUser | null) {
+    return this.documents.list(user?.id ?? null);
+  }
+
+  @Get("calendar")
+  @UseGuards(RequireUserGuard)
+  calendar(@CurrentUser() user: SessionUser) {
+    return this.documents.listCalendar(user.id);
   }
 
   @Get(":id")
-  getOne(@Param("id") id: string) {
-    return this.documents.getById(id);
+  getOne(
+    @Param("id") id: string,
+    @CurrentUser() user: SessionUser | null,
+  ) {
+    return this.documents.getById(id, user?.id ?? null);
   }
 
   @Post("upload")
-  async upload(@Req() req: FastifyRequest) {
+  async upload(
+    @Req() req: FastifyRequest,
+    @CurrentUser() user: SessionUser | null,
+  ) {
     const file = await req.file({
       limits: { fileSize: MAX_FILE_SIZE_BYTES, files: 1 },
     });
@@ -80,6 +98,11 @@ export class DocumentsController {
       );
     }
 
-    return this.documents.uploadAndAnalyze(buffer, file.filename, mimeType);
+    return this.documents.uploadAndAnalyze(
+      buffer,
+      file.filename,
+      mimeType,
+      user?.id ?? null,
+    );
   }
 }

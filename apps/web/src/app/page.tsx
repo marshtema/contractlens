@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { UploadForm } from "@/components/UploadForm";
+import { PricingButton } from "@/components/PricingButton";
 
 export default function HomePage() {
   return (
@@ -207,9 +208,19 @@ function HowItWorks() {
 }
 
 function Pricing() {
-  const plans = [
+  const plans: Array<{
+    name: string;
+    plan: "free" | "pro" | "business";
+    price: string;
+    period: string;
+    desc: string;
+    features: string[];
+    cta: string;
+    featured: boolean;
+  }> = [
     {
       name: "Free",
+      plan: "free",
       price: "₽0",
       period: "навсегда",
       desc: "Чтобы попробовать.",
@@ -220,11 +231,11 @@ function Pricing() {
         "PDF-отчёт",
       ],
       cta: "Начать",
-      href: "/",
       featured: false,
     },
     {
       name: "Pro",
+      plan: "pro",
       price: "₽890",
       period: "/мес",
       desc: "Для фрилансеров и арендаторов.",
@@ -236,11 +247,11 @@ function Pricing() {
         "Шеринг отчётов по ссылке",
       ],
       cta: "Выбрать Pro",
-      href: "/",
       featured: true,
     },
     {
       name: "Business",
+      plan: "business",
       price: "₽2 890",
       period: "/мес",
       desc: "Для команд и малого бизнеса.",
@@ -253,7 +264,6 @@ function Pricing() {
         "Приоритетная поддержка",
       ],
       cta: "Выбрать Business",
-      href: "/",
       featured: false,
     },
   ];
@@ -297,16 +307,9 @@ function Pricing() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href={p.href}
-                className={
-                  p.featured
-                    ? "btn-primary mt-6 w-full"
-                    : "btn-ghost mt-6 w-full"
-                }
-              >
+              <PricingButton plan={p.plan} featured={p.featured}>
                 {p.cta}
-              </Link>
+              </PricingButton>
             </div>
           ))}
         </div>

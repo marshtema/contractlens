@@ -25,12 +25,40 @@ model User {
   documentsUsedThisMonth   Int       @default(0)
   documentsLimit           Int       @default(3)
   pagesLimit               Int       @default(5)
+  usageResetAt             DateTime  @default(now())
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
-  documents Document[]
-  payments  Payment[]
-  apiKeys   ApiKey[]
+  documents     Document[]
+  payments      Payment[]
+  apiKeys       ApiKey[]
+  loginTokens   LoginToken[]
+  sessions      Session[]
+}
+
+model LoginToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
 }
 
 model Document {
@@ -51,6 +79,8 @@ model Document {
   analysisResult  String?
   // Извлечённый исходный текст документа (для viewer'а и AI-чата)
   extractedText   String?
+  // Дата авто-продления / истечения, если AI смог определить (для календаря)
+  renewalDate     DateTime?
   errorMessage    String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
