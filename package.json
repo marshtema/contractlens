@@ -1,0 +1,28 @@
+{
+  "name": "contractlens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ContractLens AI — AI-анализ юридических договоров",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:api dev:web",
+    "dev:api": "npm --workspace @contractlens/api run dev",
+    "dev:web": "npm --workspace @contractlens/web run dev",
+    "build": "npm-run-all build:shared build:api build:web",
+    "build:shared": "npm --workspace @contractlens/shared run build",
+    "build:api": "npm --workspace @contractlens/api run build",
+    "build:web": "npm --workspace @contractlens/web run build",
+    "db:migrate": "npm --workspace @contractlens/api run db:migrate",
+    "db:studio": "npm --workspace @contractlens/api run db:studio"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

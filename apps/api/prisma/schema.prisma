@@ -1,0 +1,123 @@
+// ContractLens AI — Prisma schema
+// На SQLite для локальной разработки. Для PostgreSQL поменять provider и
+// преобразовать String-поля статусов в ENUM при желании.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String    @id @default(uuid())
+  email                    String    @unique
+  name                     String?
+  avatarUrl                String?
+  // 'free' | 'pro' | 'business' | 'enterprise'
+  subscriptionTier         String    @default("free")
+  // 'active' | 'cancelled' | 'past_due'
+  subscriptionStatus       String    @default("active")
+  stripeCustomerId         String?
+  stripeSubscriptionId     String?
+  documentsUsedThisMonth   Int       @default(0)
+  documentsLimit           Int       @default(3)
+  pagesLimit               Int       @default(5)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  documents Document[]
+  payments  Payment[]
+  apiKeys   ApiKey[]
+}
+
+model Document {
+  id              String     @id @default(uuid())
+  userId          String?
+  user            User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename        String
+  originalName    String
+  fileSize        Int
+  mimeType        String
+  storagePath     String
+  pageCount       Int?
+  documentType    String?
+  riskScore       Int?
+  // 'uploaded' | 'processing' | 'analyzed' | 'error'
+  status          String     @default("uploaded")
+  // JSON-сериализованный AnalysisResult
+  analysisResult  String?
+  errorMessage    String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  risks DocumentRisk[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model DocumentRisk {
+  id               String   @id @default(uuid())
+  documentId       String
+  document         Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  clauseNumber     String?
+  clauseText       String?
+  // 'critical' | 'warning' | 'info'
+  riskLevel        String
+  riskCategory     String?
+  explanation      String
+  recommendation   String?
+  standardPractice String?
+  createdAt        DateTime @default(now())
+
+  @@index([documentId])
+}
+
+model Template {
+  id             String   @id @default(uuid())
+  name           String
+  category       String
+  language       String   @default("en")
+  content        String
+  isPremium      Boolean  @default(false)
+  price          Float?
+  downloadsCount Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([category])
+}
+
+model Payment {
+  id                     String   @id @default(uuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentIntentId  String?
+  amount                 Float
+  currency               String   @default("USD")
+  // 'pending' | 'succeeded' | 'failed' | 'refunded'
+  status                 String   @default("pending")
+  description            String?
+  createdAt              DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyHash     String
+  name        String?
+  // JSON-массив permissions
+  permissions String    @default("[]")
+  rateLimit   Int       @default(100)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
