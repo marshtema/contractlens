@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, AlertOctagon } from "lucide-react";
+import { ArrowLeft, AlertOctagon, Download } from "lucide-react";
 import { getDocument } from "@/lib/api";
 import { ReportView } from "@/components/ReportView";
 import { ProcessingPoller } from "@/components/ProcessingPoller";
@@ -26,17 +26,28 @@ export default async function DocumentPage({
         К истории
       </Link>
 
-      <div className="mt-5 mb-8">
-        <h1 className="font-display text-xl font-semibold text-ink">
-          {doc.filename}
-        </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-dim">
-          <span>{new Date(doc.createdAt).toLocaleString("ru-RU")}</span>
-          <span>·</span>
-          <span>{(doc.size / 1024).toFixed(1)} КБ</span>
-          <span>·</span>
-          <span className="font-mono">{doc.mimeType}</span>
+      <div className="mt-5 mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-xl font-semibold text-ink">
+            {doc.filename}
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-dim">
+            <span>{new Date(doc.createdAt).toLocaleString("ru-RU")}</span>
+            <span>·</span>
+            <span>{(doc.size / 1024).toFixed(1)} КБ</span>
+            <span>·</span>
+            <span className="font-mono">{doc.mimeType}</span>
+          </div>
         </div>
+        {doc.status === "analyzed" && (
+          <a
+            href={`/api/documents/${doc.id}/report.pdf`}
+            className="btn-ghost"
+          >
+            <Download className="h-4 w-4" />
+            PDF
+          </a>
+        )}
       </div>
 
       {doc.status === "processing" && <ProcessingPoller id={doc.id} />}

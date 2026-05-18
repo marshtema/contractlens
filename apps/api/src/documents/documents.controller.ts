@@ -2,20 +2,47 @@ import {
   BadRequestException,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Post,
   Req,
+  Res,
 } from "@nestjs/common";
-import type { FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import {
   MAX_FILE_SIZE_BYTES,
   SupportedMimeTypes,
 } from "@contractlens/shared";
 import { DocumentsService } from "./documents.service.js";
+import { PdfReportService } from "./pdf-report.service.js";
 
 @Controller("documents")
 export class DocumentsController {
-  constructor(private readonly documents: DocumentsService) {}
+  constructor(
+    private readonly documents: DocumentsService,
+    private readonly pdf: PdfReportService,
+  ) {}
+
+  @Get(":id/report.pdf")
+  async report(@Param("id") id: string, @Res() res: FastifyReply) {
+    const doc = await this.documents.getById(id);
+    if (!doc.analysisResult) {
+      throw new NotFoundException("Document is not analyzed yet");
+    }
+    const buffer = await this.pdf.render({
+      filename: doc.filename,
+      analysis: doc.analysisResult,
+      riskScore: doc.riskScore ?? 0,
+      generatedAt: new Date().toLocaleString("ru-RU"),
+    });
+    res
+      .header("Content-Type", "application/pdf")
+      .header(
+        "Content-Disposition",
+        `attachment; filename="contractlens-${id.slice(0, 8)}.pdf"`,
+      )
+      .send(buffer);
+  }
 
   @Get()
   list() {

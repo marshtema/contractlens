@@ -2,9 +2,10 @@ import { Module } from "@nestjs/common";
 import { DocumentsController } from "./documents.controller.js";
 import { DocumentsService } from "./documents.service.js";
 import { TextExtractionService } from "./text-extraction.service.js";
+import { PdfReportService } from "./pdf-report.service.js";
 
 @Module({
   controllers: [DocumentsController],
-  providers: [DocumentsService, TextExtractionService],
+  providers: [DocumentsService, TextExtractionService, PdfReportService],
 })
 export class DocumentsModule {}

@@ -21,6 +21,12 @@ export function Header() {
             Главная
           </Link>
           <Link
+            href="/compare"
+            className="rounded-md px-3 py-1.5 text-ink-muted transition hover:bg-bg-elevated hover:text-ink"
+          >
+            Сравнить версии
+          </Link>
+          <Link
             href="/documents"
             className="rounded-md px-3 py-1.5 text-ink-muted transition hover:bg-bg-elevated hover:text-ink"
           >
