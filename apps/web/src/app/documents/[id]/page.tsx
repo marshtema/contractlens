@@ -4,6 +4,7 @@ import { ArrowLeft, AlertOctagon } from "lucide-react";
 import { getDocument } from "@/lib/api";
 import { ReportView } from "@/components/ReportView";
 import { ProcessingPoller } from "@/components/ProcessingPoller";
+import { ChatPanel } from "@/components/ChatPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -57,11 +58,14 @@ export default async function DocumentPage({
       )}
 
       {doc.status === "analyzed" && doc.analysisResult && (
-        <ReportView
-          analysis={doc.analysisResult}
-          riskScore={doc.riskScore ?? 0}
-          extractedText={doc.extractedText}
-        />
+        <>
+          <ReportView
+            analysis={doc.analysisResult}
+            riskScore={doc.riskScore ?? 0}
+            extractedText={doc.extractedText}
+          />
+          <ChatPanel documentId={doc.id} />
+        </>
       )}
     </div>
   );

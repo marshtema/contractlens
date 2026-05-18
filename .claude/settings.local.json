@@ -54,7 +54,10 @@
       "Bash(tasklist /FI \"PID eq 1532\" /FO CSV /NH)",
       "Bash(tasklist /FI \"PID eq 10544\" /FO CSV /NH)",
       "Bash(curl -s \"https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyAyMMrsQxFIskC1o5ySWkDriwQk8MskGxo\")",
-      "Bash(node --enable-source-maps dist/main.js)"
+      "Bash(node --enable-source-maps dist/main.js)",
+      "Bash(curl -s -X POST http://localhost:3001/api/documents/upload -F 'file=@tmp/test-contract.txt;type=text/plain' -o tmp/up.json)",
+      "Bash(node -e \"console.log\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('tmp/up.json','utf8'\\)\\).id\\)\")",
+      "Bash(curl -s -N -X POST http://localhost:3001/api/documents/__TRACKED_VAR__/chat -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Какой срок оплаты в договоре?\"}]}' --max-time 25)"
     ]
   }
 }

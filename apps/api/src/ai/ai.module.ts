@@ -3,10 +3,14 @@ import { AiAnalyzerService } from "./ai-analyzer.service";
 import { MockAiAnalyzerService } from "./mock-ai-analyzer.service";
 import { GeminiAnalyzerService } from "./gemini-analyzer.service";
 import { GroqAnalyzerService } from "./groq-analyzer.service";
+import { ChatService } from "./chat.service";
+import { ChatController } from "./chat.controller";
 
 @Global()
 @Module({
+  controllers: [ChatController],
   providers: [
+    ChatService,
     {
       provide: AiAnalyzerService,
       useFactory: () => {
@@ -52,6 +56,6 @@ import { GroqAnalyzerService } from "./groq-analyzer.service";
       },
     },
   ],
-  exports: [AiAnalyzerService],
+  exports: [AiAnalyzerService, ChatService],
 })
 export class AiModule {}
