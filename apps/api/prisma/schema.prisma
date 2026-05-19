@@ -81,6 +81,9 @@ model Document {
   extractedText   String?
   // Дата авто-продления / истечения, если AI смог определить (для календаря)
   renewalDate     DateTime?
+  // Публичный токен для шеринга по ссылке (генерится по запросу)
+  shareToken      String?   @unique
+  shareCreatedAt  DateTime?
   errorMessage    String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt

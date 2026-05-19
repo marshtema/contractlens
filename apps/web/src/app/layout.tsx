@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ToastProvider } from "@/components/Toast";
+import { CommandPalette } from "@/components/CommandPalette";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,9 +19,12 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark">
       <body className="min-h-screen flex flex-col bg-bg text-ink antialiased">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <ToastProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <CommandPalette />
+        </ToastProvider>
       </body>
     </html>
   );

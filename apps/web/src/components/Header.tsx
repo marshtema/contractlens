@@ -54,6 +54,12 @@ export function Header() {
             Сравнить версии
           </Link>
           <Link
+            href="/templates"
+            className="hidden rounded-md px-3 py-1.5 text-ink-muted transition hover:bg-bg-elevated hover:text-ink sm:inline"
+          >
+            Шаблоны
+          </Link>
+          <Link
             href="/documents"
             className="hidden rounded-md px-3 py-1.5 text-ink-muted transition hover:bg-bg-elevated hover:text-ink sm:inline"
           >

@@ -5,6 +5,7 @@ import { getDocument } from "@/lib/api";
 import { ReportView } from "@/components/ReportView";
 import { ProcessingPoller } from "@/components/ProcessingPoller";
 import { ChatPanel } from "@/components/ChatPanel";
+import { ShareButton } from "@/components/ShareButton";
 
 export const dynamic = "force-dynamic";
 
@@ -59,13 +60,16 @@ export default async function DocumentPage({
           </div>
         </div>
         {doc.status === "analyzed" && (
-          <a
-            href={`/api/documents/${doc.id}/report.pdf`}
-            className="btn-ghost"
-          >
-            <Download className="h-4 w-4" />
-            PDF
-          </a>
+          <div className="flex gap-2">
+            <ShareButton documentId={doc.id} />
+            <a
+              href={`/api/documents/${doc.id}/report.pdf`}
+              className="btn-ghost"
+            >
+              <Download className="h-4 w-4" />
+              PDF
+            </a>
+          </div>
         )}
       </div>
 
