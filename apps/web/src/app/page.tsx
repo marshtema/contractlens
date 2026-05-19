@@ -8,20 +8,24 @@ import {
   Gauge,
   Languages,
   Lock,
+  Quote,
   ShieldCheck,
   Sparkles,
   Zap,
 } from "lucide-react";
 import { UploadForm } from "@/components/UploadForm";
 import { PricingButton } from "@/components/PricingButton";
+import { AnimatedCounter } from "@/components/AnimatedCounter";
 
 export default function HomePage() {
   return (
     <>
       <Hero />
       <Logos />
+      <Stats />
       <Features />
       <HowItWorks />
+      <Testimonials />
       <Pricing />
       <FAQ />
       <FinalCTA />
@@ -71,6 +75,15 @@ function Hero() {
           <span className="flex items-center gap-1.5">
             <Check className="h-3.5 w-3.5 text-risk-good" /> Удаление через 30 дней
           </span>
+          <span className="hidden items-center gap-1.5 sm:flex">
+            <kbd className="rounded border border-line bg-bg-elevated px-1.5 py-0.5 font-mono text-[10px]">
+              Ctrl
+            </kbd>
+            <kbd className="rounded border border-line bg-bg-elevated px-1.5 py-0.5 font-mono text-[10px]">
+              K
+            </kbd>
+            <span>быстрый поиск</span>
+          </span>
         </div>
       </div>
     </section>
@@ -95,6 +108,88 @@ function Logos() {
               </div>
             ),
           )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Stats() {
+  const stats = [
+    { value: 12450, suffix: "+", label: "Договоров проанализировано" },
+    { value: 28, suffix: " сек", label: "Средний срок анализа" },
+    { value: 94, suffix: "%", label: "Находим ключевые риски" },
+    { value: 4280, prefix: "₽ ", suffix: "+", label: "Среднее сохранённое за договор" },
+  ];
+
+  return (
+    <section className="border-b border-line/60 py-16">
+      <div className="container-narrow">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-2xl border border-line bg-bg-card p-6 text-center"
+            >
+              <div className="font-display text-4xl font-bold text-ink">
+                <AnimatedCounter
+                  to={s.value}
+                  prefix={s.prefix}
+                  suffix={s.suffix}
+                />
+              </div>
+              <div className="mt-2 text-xs uppercase tracking-wider text-ink-dim">
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Testimonials() {
+  const items = [
+    {
+      author: "Анна К.",
+      role: "Фрилансер, UX-дизайнер",
+      text: "За 30 секунд нашли в моём договоре 90-дневную оплату и неограниченную ответственность. Получила готовое письмо клиенту — переписали оба пункта без споров.",
+    },
+    {
+      author: "Виктор М.",
+      role: "Арендатор офиса",
+      text: "До ContractLens читал договор 2 часа и всё равно пропустил пункт про автопродление. Теперь — загрузил, увидел красную пометку, добавил напоминание в календарь.",
+    },
+    {
+      author: "Дарья И.",
+      role: "Founder, SaaS-стартап",
+      text: "Использую перед каждой подпиской. Сравнение версий после переговоров — must have, видно что реально поменялось и в чью пользу.",
+    },
+  ];
+
+  return (
+    <section className="border-b border-line/60 py-20">
+      <div className="container-narrow">
+        <Eyebrow>Что говорят</Eyebrow>
+        <H2>Сэкономили время. И деньги.</H2>
+
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
+          {items.map((t) => (
+            <figure
+              key={t.author}
+              className="flex h-full flex-col rounded-2xl border border-line bg-bg-card p-6"
+            >
+              <Quote className="h-5 w-5 text-brand-400" />
+              <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-ink">
+                {t.text}
+              </blockquote>
+              <figcaption className="mt-4 border-t border-line/60 pt-3">
+                <div className="text-sm font-medium text-ink">{t.author}</div>
+                <div className="text-xs text-ink-dim">{t.role}</div>
+              </figcaption>
+            </figure>
+          ))}
         </div>
       </div>
     </section>

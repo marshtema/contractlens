@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { useToast } from "./Toast";
 
 export interface LimitInfo {
   currentPlan: string;
@@ -61,6 +62,7 @@ export function LimitReachedDialog({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,11 +81,14 @@ export function LimitReachedDialog({
         url?: string;
       };
       if (data.mode === "stripe" && data.url) {
-        // Реальная Stripe Checkout — редирект на их хостед-страницу
         window.location.href = data.url;
         return;
       }
-      // Dev mock или мгновенный — обновляем страницу
+      toast.push(
+        "success",
+        `Тариф ${plan.toUpperCase()} активирован`,
+        "Лимит обновлён — можете загружать дальше.",
+      );
       router.refresh();
       onClose();
     } catch (err) {
