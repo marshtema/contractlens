@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: build & typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build shared package
+        run: npm --workspace @contractlens/shared run build
+
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "file:./prisma/dev.db"
+
+      - name: Typecheck API
+        working-directory: apps/api
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Build API
+        working-directory: apps/api
+        run: npx tsc -p tsconfig.json
+
+      - name: Typecheck Web
+        working-directory: apps/web
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Build Web
+        working-directory: apps/web
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"

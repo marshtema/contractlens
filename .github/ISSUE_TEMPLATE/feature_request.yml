@@ -1,0 +1,38 @@
+name: ✨ Идея фичи
+description: Предложить новую функциональность
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую проблему решает
+      placeholder: Сейчас приходится …
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Как это могло бы работать
+      placeholder: Хочу кнопку, которая …
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Альтернативы, которые рассматривали
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: К какой части относится
+      options:
+        - Frontend (web)
+        - Backend (api)
+        - AI / промпты
+        - Авторизация / биллинг
+        - Документация
+        - Другое
+    validations:
+      required: true

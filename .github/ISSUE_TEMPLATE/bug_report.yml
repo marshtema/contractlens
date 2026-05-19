@@ -1,0 +1,44 @@
+name: 🐛 Баг
+description: Сообщить о проблеме в работе ContractLens
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что произошло
+      description: Кратко опишите проблему
+      placeholder: При загрузке PDF-документа на 100+ страниц получаю 500…
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как воспроизвести
+      placeholder: |
+        1. Открыл /
+        2. Перетащил файл …
+        3. Получил …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Окружение
+      description: Браузер, OS, версия Node, AI_PROVIDER
+      placeholder: Chrome 130, Windows 11, Node 22.11, AI_PROVIDER=mock
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи / скриншоты
+      description: Любые сообщения из консоли API или браузера
+      render: shell
