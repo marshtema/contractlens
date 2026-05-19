@@ -74,6 +74,16 @@ export function LimitReachedDialog({
         body: JSON.stringify({ plan }),
       });
       if (!res.ok) throw new Error(await res.text());
+      const data = (await res.json()) as {
+        mode: "stripe" | "dev_mock" | "instant" | "contact_sales";
+        url?: string;
+      };
+      if (data.mode === "stripe" && data.url) {
+        // Реальная Stripe Checkout — редирект на их хостед-страницу
+        window.location.href = data.url;
+        return;
+      }
+      // Dev mock или мгновенный — обновляем страницу
       router.refresh();
       onClose();
     } catch (err) {

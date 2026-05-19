@@ -12,8 +12,43 @@ import { cn } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
 
+async function fetchMe(): Promise<{ user: unknown | null }> {
+  const apiOrigin = process.env.API_ORIGIN ?? "http://localhost:3001";
+  const { headers } = await import("next/headers");
+  const cookie = headers().get("cookie") ?? "";
+  try {
+    const res = await fetch(`${apiOrigin}/api/auth/me`, {
+      headers: { cookie },
+      cache: "no-store",
+    });
+    return res.ok ? await res.json() : { user: null };
+  } catch {
+    return { user: null };
+  }
+}
+
 export default async function DocumentsListPage() {
-  const docs = await listDocuments().catch(() => []);
+  const [docs, { user }] = await Promise.all([
+    listDocuments().catch(() => []),
+    fetchMe(),
+  ]);
+
+  if (!user) {
+    return (
+      <div className="container-narrow py-20 text-center">
+        <h1 className="font-display text-2xl font-bold text-ink">
+          Войдите, чтобы увидеть историю
+        </h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          Загруженные анонимно документы остаются доступны по прямой ссылке,
+          но не отображаются в списке.
+        </p>
+        <Link href="/login" className="btn-primary mt-6 inline-flex">
+          Войти
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="container-narrow py-12">

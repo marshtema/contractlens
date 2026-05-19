@@ -91,11 +91,11 @@ export class DocumentsService {
   }
 
   async list(userId: string | null): Promise<DocumentSummary[]> {
+    // Анонимы не видят чужие документы. Если нужно показать свои —
+    // фронт хранит ID последнего загруженного в localStorage.
+    if (!userId) return [];
     const docs = await this.prisma.document.findMany({
-      where: userId
-        ? { userId }
-        : // Анонимные — только за последний час, показывать чужие не надо
-          { userId: null, createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
+      where: { userId },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -186,7 +186,10 @@ export class DocumentsService {
             documentType: analysis.document_type,
             riskScore: analysis.risk_score,
             analysisResult: JSON.stringify(analysis),
-            renewalDate: extractRenewalDate(analysis.key_terms.duration),
+            // Сначала пробуем по AI-извлечённому сроку, потом по сырому тексту
+            renewalDate:
+              extractRenewalDate(analysis.key_terms.duration) ??
+              extractRenewalDate(trimmed.slice(0, 5000)),
             errorMessage: null,
           },
         }),

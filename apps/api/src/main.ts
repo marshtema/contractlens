@@ -10,7 +10,12 @@ import { AppModule } from "./app.module.js";
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: { level: "info" } }),
+    // rawBody нужен для Stripe webhook signature verification
+    new FastifyAdapter({
+      logger: { level: "info" },
+      bodyLimit: 11 * 1024 * 1024,
+    }),
+    { rawBody: true },
   );
 
   const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
