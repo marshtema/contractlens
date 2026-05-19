@@ -6,13 +6,16 @@ import { ReportView } from "@/components/ReportView";
 import { ProcessingPoller } from "@/components/ProcessingPoller";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ShareButton } from "@/components/ShareButton";
+import { PdfErrorNotice } from "@/components/PdfErrorNotice";
 
 export const dynamic = "force-dynamic";
 
 export default async function DocumentPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { pdf_error?: string };
 }) {
   let doc;
   try {
@@ -63,7 +66,7 @@ export default async function DocumentPage({
           <div className="flex gap-2">
             <ShareButton documentId={doc.id} />
             <a
-              href={`/api/documents/${doc.id}/report.pdf`}
+              href={`/documents/${doc.id}/report.pdf`}
               className="btn-ghost"
             >
               <Download className="h-4 w-4" />
@@ -93,6 +96,9 @@ export default async function DocumentPage({
 
       {doc.status === "analyzed" && doc.analysisResult && (
         <>
+          {searchParams.pdf_error && (
+            <PdfErrorNotice status={searchParams.pdf_error} />
+          )}
           <ReportView
             analysis={doc.analysisResult}
             riskScore={doc.riskScore ?? 0}
